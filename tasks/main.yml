@@ -16,7 +16,6 @@
   failed_when:
     - _delete_k8s_prometheus.rc !=0 and not "not found" in _delete_k8s_prometheus.stderr
   when:
-    # - k8s_node_type == "master"
     - inventory_hostname == k8s_primary_master_name
   tags:
     - never
@@ -26,8 +25,11 @@
 - name: Apply Prometheus
   shell: >
     helm install {{ k8s_prometheus_release }} {{ k8s_prometheus_chart }} --repo {{ k8s_prometheus_repository }} --namespace {{ k8s_prometheus_namespace }}
+    {% if k8s_prometheus_server_prefixURL | length > 0 %}
+    --set server.prefixURL="{{ k8s_prometheus_server_prefixURL }}"
+    --set server.baseURL="http://localhost:9090{{ k8s_prometheus_server_prefixURL }}"
+    {% endif %}
   when:
-    # - k8s_node_type == "master"
     - inventory_hostname == k8s_primary_master_name
   tags:
     - never

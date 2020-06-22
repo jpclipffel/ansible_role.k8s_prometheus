@@ -13,12 +13,13 @@ spec:
   gateways:
   - {{ k8s_prometheus_custom_istio_vs_gateway | default("istio-system/istio-gateway") }}
   http:
-  # - name: "http"
-  - match:
-    - uri:
-        prefix: "/prometheus"
-    route:
+  - route:
     - destination:
-        host: prometheus-server
+        host: "prometheus-server"
         port:
-          number: 9090
+          number: 80
+{% if k8s_prometheus_server_prefixURL | length > 0 %}
+    match:
+    - uri:
+        prefix: "{{ k8s_prometheus_server_prefixURL }}"
+{% endif %}
