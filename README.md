@@ -15,7 +15,7 @@ If you whish to setup a central Prometheus server (e.g. to aggregate metrics thr
 
 | Variable                          | Type     | Required | Default       | Description                                                |
 |-----------------------------------|----------|----------|---------------|------------------------------------------------------------|
-| `k8s_prometheus_namespace`        |          |          |               |                                                            |
+| `k8s_prometheus_namespace`        | `string` | No       | `default`     | Deployment namespace                                       |
 | `k8s_prometheus_server_prefixURL` | `string` | No       | `/prometheus` | Prometheus URL prefix                                      |
 | `k8s_prometheus_release`          | `string` | No       | `prometheus`  | Helm release name                                          |
 | `k8s_prometheus_custom_manifests` | `list`   | No       | `[]`          | Custom manifests to apply; must be located in `templates/` |
