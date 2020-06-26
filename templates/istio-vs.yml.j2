@@ -1,5 +1,5 @@
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: {{ k8s_prometheus_custom_istio_vs_name | default("prometheus-vs") }}
