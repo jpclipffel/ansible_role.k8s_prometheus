@@ -3,23 +3,36 @@
     that:
       - k8s_primary_master_name is defined
       - k8s_node_type is defined
-  tags:
-    - never
-    - apply
-    - delete
+  tags: [never, apply, delete]
+
+
+- name: Get Helm releases
+  shell: >
+    helm list --namespace {{ k8s_prometheus_namespace }} -o yaml
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  register: _helm_releases
+  tags: [never, apply, delete]
+
+
+- name: Set Prometheus status
+  set_fact:
+    k8s_prometheus_status: "{{ (_helm_releases.stdout | from_yaml | selectattr('name', 'equalto', k8s_prometheus_release) | list)[0].status | default('') }}"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply, delete]
 
 
 - name: Delete Prometheus
   shell: |
     helm delete {{ k8s_prometheus_release }} --namespace {{ k8s_prometheus_namespace }}
   register: _delete_k8s_prometheus
-  failed_when:
-    - _delete_k8s_prometheus.rc !=0 and not "not found" in _delete_k8s_prometheus.stderr
+  # failed_when:
+  #   - _delete_k8s_prometheus.rc !=0 and not "not found" in _delete_k8s_prometheus.stderr
   when:
     - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - delete
+    - k8s_prometheus_status == "deployed"
+  tags: [never, delete]
 
 
 - name: Apply Prometheus
@@ -31,30 +44,30 @@
     {% endif %}
   when:
     - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - apply
+    - k8s_prometheus_status != "deployed"
+  tags: [never, apply]
 
 
-- name: Apply custom manifests
-  k8s:
-    state: present
-    definition: "{{ lookup('template', item + '.yml.j2') }}"
-  with_items: "{{ k8s_prometheus_custom_manifests }}"
-  when:
-    - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - apply
+# - name: Apply custom manifests
+#   k8s:
+#     state: present
+#     definition: "{{ lookup('template', item + '.yml.j2') }}"
+#   with_items: "{{ k8s_prometheus_custom_manifests }}"
+#   when:
+#     - inventory_hostname == k8s_primary_master_name
+#   tags:
+#     - never
+#     - apply
 
 
-- name: Delete custom manifests
-  k8s:
-    state: absent
-    definition: "{{ lookup('template', item + '.yml.j2') }}"
-  with_items: "{{ k8s_prometheus_custom_manifests }}"
-  when:
-    - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - delete
+# - name: Delete custom manifests
+#   k8s:
+#     state: absent
+#     definition: "{{ lookup('template', item + '.yml.j2') }}"
+#   with_items: "{{ k8s_prometheus_custom_manifests }}"
+#   ignore_errors: yes
+#   when:
+#     - inventory_hostname == k8s_primary_master_name
+#   tags:
+#     - never
+#     - delete
