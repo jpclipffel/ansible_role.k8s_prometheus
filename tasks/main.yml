@@ -27,47 +27,35 @@
   shell: |
     helm delete {{ k8s_prometheus_release }} --namespace {{ k8s_prometheus_namespace }}
   register: _delete_k8s_prometheus
-  # failed_when:
-  #   - _delete_k8s_prometheus.rc !=0 and not "not found" in _delete_k8s_prometheus.stderr
   when:
     - inventory_hostname == k8s_primary_master_name
     - k8s_prometheus_status == "deployed"
   tags: [never, delete]
 
 
-- name: Apply Prometheus
-  shell: >
-    helm install {{ k8s_prometheus_release }} {{ k8s_prometheus_chart }} --repo {{ k8s_prometheus_repository }} --namespace {{ k8s_prometheus_namespace }}
-    {% if k8s_prometheus_server_prefixURL | length > 0 %}
-    --set server.prefixURL="{{ k8s_prometheus_server_prefixURL }}"
-    --set server.baseURL="http://localhost:9090{{ k8s_prometheus_server_prefixURL }}"
-    {% endif %}
+- name: Create Prometheus Helm values file
+  tempfile:
+    state: file
+  register: _prometheus_values
   when:
     - inventory_hostname == k8s_primary_master_name
-    - k8s_prometheus_status != "deployed"
   tags: [never, apply]
 
 
-# - name: Apply custom manifests
-#   k8s:
-#     state: present
-#     definition: "{{ lookup('template', item + '.yml.j2') }}"
-#   with_items: "{{ k8s_prometheus_custom_manifests }}"
-#   when:
-#     - inventory_hostname == k8s_primary_master_name
-#   tags:
-#     - never
-#     - apply
+- name: Template Prometheus Helm values file
+  template:
+    src: values.yml.j2
+    dest: "{{ _prometheus_values.path }}"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply]
 
 
-# - name: Delete custom manifests
-#   k8s:
-#     state: absent
-#     definition: "{{ lookup('template', item + '.yml.j2') }}"
-#   with_items: "{{ k8s_prometheus_custom_manifests }}"
-#   ignore_errors: yes
-#   when:
-#     - inventory_hostname == k8s_primary_master_name
-#   tags:
-#     - never
-#     - delete
+- name: Apply Prometheus
+  shell: >
+    helm {% if k8s_prometheus_status == "deployed" %} upgrade {% else %} install {% endif %}
+    {{ k8s_prometheus_release }} {{ k8s_prometheus_chart }} --repo {{ k8s_prometheus_repository }}
+    --namespace {{ k8s_prometheus_namespace }} -f {{ _prometheus_values.path }}
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply]
