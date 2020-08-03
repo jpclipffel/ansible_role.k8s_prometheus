@@ -2,5 +2,6 @@ k8s_prometheus_repository: https://kubernetes-charts.storage.googleapis.com/
 k8s_prometheus_chart: prometheus
 k8s_prometheus_release: prometheus
 k8s_prometheus_namespace: default
+k8s_prometheus_values: {}
 k8s_prometheus_server_prefixURL: "/prometheus"
 k8s_prometheus_custom_manifests: []
