@@ -1,7 +1,18 @@
+# Helm's chart repository (default Helm repositor)
 k8s_prometheus_repository: https://kubernetes-charts.storage.googleapis.com/
+
+# Prometheus chart name
+# Don't use 'stable/' prefix since we are using --repo
 k8s_prometheus_chart: prometheus
+
+# Prometheus release name
 k8s_prometheus_release: prometheus
+
+# Prometheus namespace
 k8s_prometheus_namespace: default
-k8s_prometheus_values: {}
-k8s_prometheus_server_prefixURL: "/prometheus"
-k8s_prometheus_custom_manifests: []
+
+# Prometheus configuration
+k8s_prometheus_values:
+  server:
+    baseURL: "http://localhost:80/"
+    prefixURL: "/"
